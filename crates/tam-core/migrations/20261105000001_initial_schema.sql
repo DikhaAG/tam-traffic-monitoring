@@ -76,3 +76,4 @@ CREATE INDEX IF NOT EXISTS idx_pm2_snapshots_node_time ON pm2_process_snapshots(
 CREATE INDEX IF NOT EXISTS idx_network_packets_time ON network_packets(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_app_requests_time ON app_requests(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_alert_incidents_time ON alert_incidents(created_at DESC);
+

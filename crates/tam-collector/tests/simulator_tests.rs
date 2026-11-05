@@ -43,3 +43,4 @@ fn test_traffic_simulator_spike_injection() {
 
     assert!(spike_count > normal_count * 2);
 }
+

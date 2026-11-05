@@ -22,3 +22,4 @@ fn test_telegram_message_formatting() {
     assert!(formatted.contains("Unhandled exception"));
     assert!(formatted.contains("TAM Monitoring"));
 }
+

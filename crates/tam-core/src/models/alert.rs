@@ -11,3 +11,4 @@ pub struct AlertEvent {
     pub timestamp: DateTime<Utc>,
     pub resolved: bool,
 }
+

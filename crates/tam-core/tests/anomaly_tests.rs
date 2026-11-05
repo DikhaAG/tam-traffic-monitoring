@@ -88,3 +88,4 @@ fn test_anomaly_detection_traffic_spike() {
     assert!(!alerts.is_empty());
     assert!(alerts.iter().any(|a| a.category == "traffic_spike" || a.category == "error_rate_surge"));
 }
+

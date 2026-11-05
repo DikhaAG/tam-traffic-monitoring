@@ -30,3 +30,4 @@ fn test_parse_invalid_log_returns_none() {
     assert!(LogParser::parse_nginx_line("gibberish malformed log").is_none());
     assert!(LogParser::parse_json_line("{invalid_json}").is_none());
 }
+

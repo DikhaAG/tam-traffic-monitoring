@@ -27,3 +27,4 @@ pub struct Pm2Command {
     pub status: String, // "pending", "success", "failed"
     pub output: Option<String>,
 }
+

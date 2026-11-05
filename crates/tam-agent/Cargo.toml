@@ -16,4 +16,7 @@ chrono = { workspace = true }
 uuid = { workspace = true }
 tokio-tungstenite = { workspace = true }
 futures-util = { workspace = true }
+rand = "0.8"
 
+[dev-dependencies]
+tempfile = "3"

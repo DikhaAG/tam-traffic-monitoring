@@ -36,3 +36,4 @@ pub struct AggregatedMetricsSnapshot {
     pub error_rate_percent: f32,
     pub active_connections: u32,
 }
+

@@ -42,3 +42,4 @@ pub struct ServerNode {
     pub status: String, // "online", "offline"
     pub last_heartbeat: DateTime<Utc>,
 }
+
