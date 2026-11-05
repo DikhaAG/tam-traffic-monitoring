@@ -48,3 +48,4 @@ pub fn extract_git_metadata(cwd: &str) -> (Option<String>, Option<String>, Optio
 
     (branch, commit, msg)
 }
+

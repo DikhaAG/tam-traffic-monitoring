@@ -36,3 +36,4 @@ impl LogTailer {
         Ok(ring_buffer.into_iter().collect())
     }
 }
+

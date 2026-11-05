@@ -2040,6 +2040,7 @@ dependencies = [
  "chrono",
  "dotenvy",
  "futures-util",
+ "http-body-util",
  "redis",
  "serde",
  "serde_json",
