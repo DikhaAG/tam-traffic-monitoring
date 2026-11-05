@@ -18,6 +18,7 @@ fn test_core_models_serialization() {
         os_info: "Ubuntu 24.04 LTS".to_string(),
         cpu_cores: 8,
         total_memory_mb: 16384,
+        disk_usage_percent: 25.0,
         status: "online".to_string(),
         last_heartbeat: Utc::now(),
     };
@@ -29,3 +30,4 @@ fn test_core_models_serialization() {
     let deserialized: ServerNode = serde_json::from_str(&serialized).expect("Failed to deserialize ServerNode");
     assert_eq!(deserialized.environment, Environment::Production);
 }
+
