@@ -31,7 +31,60 @@ services:
       timeout: 3s
       retries: 5
 
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: tam-backend
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-tam_user}:${POSTGRES_PASSWORD:-tam_secret_password}@postgres:5432/${POSTGRES_DB:-tam_db}
+      REDIS_URL: redis://redis:6379
+      API_PORT: 4000
+      AGENT_SHARED_TOKEN: ${AGENT_SHARED_TOKEN:-tam_agent_secret_token_2026}
+      JWT_SECRET: ${JWT_SECRET:-tam_jwt_secret_dev_key}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    profiles: ["full", "all"]
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: tam-web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+      NEXT_PUBLIC_WS_URL: ws://localhost:4000/ws/live
+    depends_on:
+      - backend
+    profiles: ["full", "all"]
+
+  simulated-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agent
+    container_name: tam-simulated-agent
+    restart: unless-stopped
+    environment:
+      TAM_SERVER_WS_URL: ws://backend:4000/ws/agent
+      TAM_AGENT_TOKEN: ${AGENT_SHARED_TOKEN:-tam_agent_secret_token_2026}
+      TAM_NODE_ID: ubuntu-docker-01
+      TAM_NODE_NAME: "Ubuntu Docker Node"
+      TAM_ENVIRONMENT: production
+    depends_on:
+      - backend
+    profiles: ["agent", "all"]
+
 volumes:
   postgres_data:
   redis_data:
-

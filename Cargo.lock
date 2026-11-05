@@ -2042,6 +2042,7 @@ dependencies = [
  "futures-util",
  "http-body-util",
  "redis",
+ "reqwest",
  "serde",
  "serde_json",
  "sqlx",

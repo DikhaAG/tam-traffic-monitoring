@@ -1,0 +1,19 @@
+FROM rust:1.94-alpine AS builder
+RUN apk add --no-cache musl-dev pkgconfig openssl-dev
+
+WORKDIR /app
+COPY Cargo.toml Cargo.lock ./
+COPY crates/tam-core crates/tam-core
+COPY crates/tam-agent crates/tam-agent
+COPY crates/tam-collector crates/tam-collector
+COPY crates/tam-api crates/tam-api
+
+RUN cargo build --release -p tam-api
+
+FROM alpine:3.20 AS runner
+RUN apk add --no-cache ca-certificates tzdata
+WORKDIR /app
+COPY --from=builder /app/target/release/tam-api /app/tam-api
+
+EXPOSE 4000
+CMD ["/app/tam-api"]

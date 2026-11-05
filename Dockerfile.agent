@@ -1,0 +1,27 @@
+FROM rust:1.94-alpine AS builder
+RUN apk add --no-cache musl-dev pkgconfig openssl-dev
+
+WORKDIR /app
+COPY Cargo.toml Cargo.lock ./
+COPY crates/tam-core crates/tam-core
+COPY crates/tam-agent crates/tam-agent
+COPY crates/tam-collector crates/tam-collector
+COPY crates/tam-api crates/tam-api
+
+RUN cargo build --release -p tam-agent
+
+FROM alpine:3.20 AS runner
+RUN apk add --no-cache ca-certificates tzdata nodejs npm git
+RUN npm install -g pm2
+
+WORKDIR /app
+COPY --from=builder /app/target/release/tam-agent /app/tam-agent
+
+ENV TAM_SERVER_WS_URL=ws://backend:4000/ws/agent
+ENV TAM_AGENT_TOKEN=tam_agent_secret_token_2026
+ENV TAM_NODE_ID=ubuntu-docker-01
+ENV TAM_NODE_NAME="Ubuntu Docker Container"
+ENV TAM_ENVIRONMENT=production
+
+ENTRYPOINT ["/app/tam-agent"]
+CMD ["--simulate-pm2"]
