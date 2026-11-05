@@ -93,3 +93,4 @@ sudo systemctl enable --now tam-agent
 - **Token Verification**: Handshake requires `TAM_AGENT_TOKEN` matching the server's `AGENT_SHARED_TOKEN`.
 - **Command Sanitization**: Remote commands are restricted to whitelist actions (`restart`, `reload`, `stop`, `clear_logs`) executed directly via PM2 without shell injection vulnerabilities.
 - **Audit Logging**: Every executed remote action is recorded in the central PostgreSQL audit table with issuer user, server ID, target app, and execution output.
+

@@ -25,3 +25,4 @@ ENV TAM_ENVIRONMENT=production
 
 ENTRYPOINT ["/app/tam-agent"]
 CMD ["--simulate-pm2"]
+

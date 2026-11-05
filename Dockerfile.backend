@@ -17,3 +17,4 @@ COPY --from=builder /app/target/release/tam-api /app/tam-api
 
 EXPOSE 4000
 CMD ["/app/tam-api"]
+

@@ -199,3 +199,4 @@ pnpm --filter web build
 - **Mutual Pre-shared Key Authentication**: All WebSocket connections require pre-shared authentication tokens.
 - **Whitelist-only PM2 Actions**: Commands are strictly validated against `["restart", "reload", "stop", "clear_logs"]`.
 - **Full Central Audit Trail**: Every executed action records timestamp, initiator, target, and output in the `pm2_audit_logs` table.
+

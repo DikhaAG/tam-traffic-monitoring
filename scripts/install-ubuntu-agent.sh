@@ -71,3 +71,4 @@ echo "  systemctl status tam-agent"
 echo "  journalctl -u tam-agent -f"
 echo ""
 echo "=== Installation setup complete ==="
+
