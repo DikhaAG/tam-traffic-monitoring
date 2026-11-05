@@ -1,0 +1,37 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/tam-core",
+    "crates/tam-agent",
+    "crates/tam-collector",
+    "crates/tam-api",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["TAM Team"]
+license = "MIT"
+
+[workspace.dependencies]
+tam-core = { path = "crates/tam-core" }
+tam-agent = { path = "crates/tam-agent" }
+tam-collector = { path = "crates/tam-collector" }
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "2.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "tls-rustls", "postgres", "chrono", "uuid", "json", "migrate"] }
+redis = { version = "0.28", features = ["tokio-comp", "connection-manager", "aio"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+axum = { version = "0.8", features = ["ws"] }
+tower = "0.5"
+tower-http = { version = "0.6", features = ["cors", "trace"] }
+tokio-tungstenite = "0.26"
+futures-util = "0.3"
+dotenvy = "0.15"
+
