@@ -99,6 +99,7 @@ flowchart TD
 │   ├── superpowers/plans/          # TDD execution plans
 │   └── UBUNTU_PM2_SETUP.md         # Ubuntu server setup runbook
 └── scripts/
+    ├── check-ubuntu-readiness.sh   # Comprehensive strict read-only pre-flight audit
     └── install-ubuntu-agent.sh     # One-step systemd agent installer
 ```
 
@@ -164,6 +165,16 @@ The agent connects to `ws://127.0.0.1:4000/ws/agent`, registers as an Ubuntu nod
 
 ## 🐧 Ubuntu Server Deployment
 
+### 1. Verify Server Readiness (Strict Read-Only Pre-flight Audit)
+Before installing, verify your Ubuntu server meets all hardware and software dependencies:
+```bash
+./scripts/check-ubuntu-readiness.sh
+
+# Or run directly on the server without cloning:
+curl -fsSL https://raw.githubusercontent.com/DikhaAG/tam-traffic-monitoring/main/scripts/check-ubuntu-readiness.sh | bash
+```
+
+### 2. Install PM2 Agent Daemon
 To install `tam-agent` on an actual Ubuntu server running PM2:
 
 ```bash

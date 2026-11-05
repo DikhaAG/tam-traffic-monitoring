@@ -214,58 +214,37 @@ Jika PM2 berjalan di bawah user `root`, service systemd dapat menggunakan `User=
 
 ## 6. Pre-flight Checklist (Skrip Verifikasi Kesiapan Server)
 
-Simpan skrip verifikasi berikut di target server Ubuntu untuk mengecek kesiapan sebelum instalasi:
+Gunakan skrip audit siap pakai **`scripts/check-ubuntu-readiness.sh`** yang bersifat **Strict Read-Only** (tidak memodifikasi sistem) untuk mengevaluasi apakah server Anda sudah siap menjalankan TAM:
+
+### Cara Menjalankan Skrip:
 
 ```bash
-cat << 'EOF' > check-server-prerequisites.sh
-#!/usr/bin/env bash
-echo "=== TAM Target Server Pre-Flight Check ==="
+# 1. Unduh atau jalankan langsung dari repository
+./scripts/check-ubuntu-readiness.sh
 
-# 1. OS Version
-if [ -f /etc/os-release ]; then
-    . /etc/os-release
-    echo "✔ OS: $PRETTY_NAME"
-else
-    echo "✖ OS: Bukan Ubuntu/Debian yang dikenali"
-fi
+# 2. Khusus mengecek kesiapan Target Node PM2 saja:
+./scripts/check-ubuntu-readiness.sh --role agent
 
-# 2. Kernel
-echo "✔ Kernel: $(uname -r)"
+# 3. Khusus mengecek kesiapan Central Monitoring Platform (Docker, DB, Ports):
+./scripts/check-ubuntu-readiness.sh --role central
 
-# 3. Node.js
-if command -v node >/dev/null 2>&1; then
-    echo "✔ Node.js: $(node -v)"
-else
-    echo "✖ Node.js belum terinstall (Wajib v18/v20/v22)"
-fi
-
-# 4. PM2
-if command -v pm2 >/dev/null 2>&1; then
-    echo "✔ PM2: $(pm2 -v)"
-    echo "  Status proses PM2 saat ini:"
-    pm2 jlist | jq '.[].name' 2>/dev/null || echo "  (Belum ada aplikasi PM2 yang berjalan)"
-else
-    echo "✖ PM2 belum terinstall (Wajib: npm install -g pm2)"
-fi
-
-# 5. Git
-if command -v git >/dev/null 2>&1; then
-    echo "✔ Git: $(git --version)"
-else
-    echo "✖ Git belum terinstall (sudo apt install -y git)"
-fi
-
-# 6. Memory & Disk
-FREE_RAM=$(free -m | awk '/^Mem:/{print $7}')
-DISK_AVAIL=$(df -h / | awk 'NR==2 {print $4}')
-echo "✔ RAM Tersedia: ${FREE_RAM}MB (Minimal 200MB free)"
-echo "✔ Disk Tersedia: ${DISK_AVAIL}"
-
-echo "=========================================="
-EOF
-chmod +x check-server-prerequisites.sh
-./check-server-prerequisites.sh
+# 4. Format JSON untuk integrasi otomasi/CI pipeline:
+./scripts/check-ubuntu-readiness.sh --json
 ```
+
+### Jalankan Langsung via Single-Line (Tanpa Clone Repository):
+```bash
+curl -fsSL https://raw.githubusercontent.com/DikhaAG/tam-traffic-monitoring/main/scripts/check-ubuntu-readiness.sh | bash
+```
+
+### Apa Saja yang Diperiksa?
+1. **OS & Kernel**: Ubuntu 20.04/22.04/24.04 LTS, arsitektur CPU x86_64/aarch64, Kernel >= 5.4, systemd init.
+2. **Kapasitas Hardware**: RAM total & free (overhead agent < 30MB, central min 4GB), Disk space, vCPU cores.
+3. **Node.js & PM2 Stack**: Node >= 18 LTS, PM2 global runtime, active fleet apps (`pm2 jlist`), Git CLI, perizinan direktori `$PM2_HOME`.
+4. **Central Platform Stack**: Docker daemon, Docker Compose v2, ketersediaan port (4000, 3000, 5433, 6380, 80, 443).
+5. **Konektivitas Jaringan**: DNS resolution, HTTPS/WSS outbound egress, status UFW.
+6. **Kernel Limits**: Batas file descriptors (`ulimit -n`), socket backlog (`somaxconn`).
+7. **Rekomendasi Otomatis**: Menampilkan copy-paste command untuk memperbaiki setiap peringatan atau kegagalan yang terdeteksi.
 
 ---
 
