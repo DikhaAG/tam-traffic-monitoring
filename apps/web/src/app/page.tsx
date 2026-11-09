@@ -13,6 +13,7 @@ type MainTab = "pm2" | "overview" | "network" | "alerts";
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<MainTab>("pm2");
+  const [serverCount, setServerCount] = useState<number>(1);
   const { isConnected, metrics } = useTrafficStream();
 
   const tabs: { key: MainTab; label: string; icon: React.ReactNode; badge?: string }[] = [
@@ -42,7 +43,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#080c14] flex flex-col">
-      <Navbar serverCount={4} isWsConnected={isConnected} />
+      <Navbar serverCount={serverCount} isWsConnected={isConnected} />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         {/* Main Tab Navigation */}
@@ -78,7 +79,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Tab Views */}
-        {activeTab === "pm2" && <Pm2FleetView />}
+        {activeTab === "pm2" && <Pm2FleetView onServerCountChange={setServerCount} />}
         {activeTab === "overview" && <ExecutiveOverview metrics={metrics} />}
         {activeTab === "network" && <PacketInspector />}
         {activeTab === "alerts" && <AlertCenter />}

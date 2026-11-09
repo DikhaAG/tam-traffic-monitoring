@@ -1,30 +1,105 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ServerNodeData, ServerNodeCard } from "./server-node-card";
 import { Pm2Process, ProcessTable } from "./process-table";
 import { LiveLogTerminal } from "./live-log-terminal";
 import { EnvironmentTabs, EnvironmentFilter } from "@/components/environment-tabs";
-import { PlusCircle, Search } from "lucide-react";
+import { Search } from "lucide-react";
+import { getApiBaseUrl, getWsBaseUrl } from "@/lib/api-config";
 
 interface Pm2FleetViewProps {
   initialServers?: ServerNodeData[];
   initialProcesses?: Record<string, Pm2Process[]>;
+  onServerCountChange?: (count: number) => void;
 }
 
 export function Pm2FleetView({
   initialServers = [],
   initialProcesses = {},
+  onServerCountChange,
 }: Pm2FleetViewProps) {
+  const [servers, setServers] = useState<ServerNodeData[]>(initialServers);
+  const [processesMap, setProcessesMap] = useState<Record<string, Pm2Process[]>>(initialProcesses);
   const [filterEnv, setFilterEnv] = useState<EnvironmentFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedServerId, setSelectedServerId] = useState<string>(
-    initialServers[0]?.id || "srv-prod-01"
+    initialServers[0]?.id || ""
   );
   const [selectedLogProcess, setSelectedLogProcess] = useState<string | null>(null);
 
-  // Fallback realistic servers if initialServers empty
-  const servers: ServerNodeData[] = initialServers.length > 0 ? initialServers : [
+  // 1. Fetch live servers from backend API
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchServers() {
+      try {
+        const apiUrl = getApiBaseUrl();
+        const res = await fetch(`${apiUrl}/api/v1/servers`, { cache: "no-store" });
+        if (res.ok) {
+          const data: ServerNodeData[] = await res.json();
+          if (isMounted && data && data.length > 0) {
+            setServers(data);
+            if (onServerCountChange) {
+              onServerCountChange(data.length);
+            }
+            setSelectedServerId((prev) => {
+              if (!prev || !data.some((s) => s.id === prev)) {
+                return data[0].id;
+              }
+              return prev;
+            });
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to fetch live servers from API:", err);
+      }
+    }
+
+    fetchServers();
+    const interval = setInterval(fetchServers, 5000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [onServerCountChange]);
+
+  // 2. Fetch PM2 processes for selected server
+  useEffect(() => {
+    if (!selectedServerId) return;
+
+    let isMounted = true;
+
+    async function fetchProcesses() {
+      try {
+        const apiUrl = getApiBaseUrl();
+        const res = await fetch(`${apiUrl}/api/v1/servers/${selectedServerId}/pm2`, { cache: "no-store" });
+        if (res.ok) {
+          const procs: Pm2Process[] = await res.json();
+          if (isMounted) {
+            setProcessesMap((prev) => ({
+              ...prev,
+              [selectedServerId]: procs,
+            }));
+          }
+        }
+      } catch (err) {
+        console.warn(`Failed to fetch PM2 processes for ${selectedServerId}:`, err);
+      }
+    }
+
+    fetchProcesses();
+    const interval = setInterval(fetchProcesses, 3000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [selectedServerId]);
+
+  // 3. Fallback mock data only if API returns empty and no servers connected yet
+  const fallbackServers: ServerNodeData[] = [
     {
       id: "srv-prod-01",
       hostname: "ubuntu-prod-gateway",
@@ -37,161 +112,19 @@ export function Pm2FleetView({
       status: "online",
       last_heartbeat: new Date().toISOString(),
     },
-    {
-      id: "srv-prod-02",
-      hostname: "ubuntu-prod-worker",
-      ip_address: "10.0.1.11",
-      environment: "production",
-      os_info: "Ubuntu 24.04 LTS (x86_64)",
-      cpu_cores: 8,
-      total_memory_mb: 16384,
-      disk_usage_percent: 52.0,
-      status: "online",
-      last_heartbeat: new Date().toISOString(),
-    },
-    {
-      id: "srv-stag-01",
-      hostname: "ubuntu-staging-app",
-      ip_address: "10.0.2.20",
-      environment: "staging",
-      os_info: "Ubuntu 22.04 LTS",
-      cpu_cores: 4,
-      total_memory_mb: 8192,
-      disk_usage_percent: 38.0,
-      status: "online",
-      last_heartbeat: new Date().toISOString(),
-    },
-    {
-      id: "srv-dev-01",
-      hostname: "ubuntu-dev-sandbox",
-      ip_address: "10.0.3.30",
-      environment: "development",
-      os_info: "Ubuntu 24.04 LTS",
-      cpu_cores: 4,
-      total_memory_mb: 8192,
-      disk_usage_percent: 29.0,
-      status: "online",
-      last_heartbeat: new Date().toISOString(),
-    },
   ];
 
-  const fallbackProcesses: Record<string, Pm2Process[]> = {
-    "srv-prod-01": [
-      {
-        process_id: 0,
-        name: "tam-web-api",
-        status: "online",
-        cpu_percent: 1.8,
-        memory_bytes: 84_500_000,
-        uptime_seconds: 43200,
-        restart_count: 0,
-        git_branch: "main",
-        git_commit: "9bf41a2",
-        node_version: "v20.18.0",
-      },
-      {
-        process_id: 1,
-        name: "order-service",
-        status: "online",
-        cpu_percent: 3.2,
-        memory_bytes: 142_000_000,
-        uptime_seconds: 18000,
-        restart_count: 1,
-        git_branch: "main",
-        git_commit: "9bf41a2",
-        node_version: "v20.18.0",
-      },
-      {
-        process_id: 2,
-        name: "auth-gateway",
-        status: "online",
-        cpu_percent: 0.9,
-        memory_bytes: 65_000_000,
-        uptime_seconds: 72000,
-        restart_count: 0,
-        git_branch: "main",
-        git_commit: "8cc21a0",
-        node_version: "v20.18.0",
-      },
-    ],
-    "srv-prod-02": [
-      {
-        process_id: 0,
-        name: "email-queue-worker",
-        status: "online",
-        cpu_percent: 5.4,
-        memory_bytes: 180_000_000,
-        uptime_seconds: 86400,
-        restart_count: 2,
-        git_branch: "main",
-        git_commit: "9bf41a2",
-        node_version: "v20.18.0",
-      },
-      {
-        process_id: 1,
-        name: "telemetry-cron",
-        status: "online",
-        cpu_percent: 0.3,
-        memory_bytes: 42_000_000,
-        uptime_seconds: 14400,
-        restart_count: 0,
-        git_branch: "main",
-        git_commit: "9bf41a2",
-        node_version: "v20.18.0",
-      },
-    ],
-    "srv-stag-01": [
-      {
-        process_id: 0,
-        name: "staging-api",
-        status: "online",
-        cpu_percent: 2.0,
-        memory_bytes: 90_000_000,
-        uptime_seconds: 3600,
-        restart_count: 0,
-        git_branch: "staging",
-        git_commit: "2f4e6d1",
-        node_version: "v22.2.0",
-      },
-      {
-        process_id: 1,
-        name: "test-notifier",
-        status: "errored",
-        cpu_percent: 0.0,
-        memory_bytes: 0,
-        uptime_seconds: 0,
-        restart_count: 5,
-        git_branch: "staging",
-        git_commit: "2f4e6d1",
-        node_version: "v22.2.0",
-      },
-    ],
-    "srv-dev-01": [
-      {
-        process_id: 0,
-        name: "dev-sandbox-server",
-        status: "online",
-        cpu_percent: 1.1,
-        memory_bytes: 75_000_000,
-        uptime_seconds: 1800,
-        restart_count: 0,
-        git_branch: "feature/pm2-stream",
-        git_commit: "1a3b5c7",
-        node_version: "v22.2.0",
-      },
-    ],
-  };
-
-  const currentProcessesMap = Object.keys(initialProcesses).length > 0 ? initialProcesses : fallbackProcesses;
+  const activeServers = servers.length > 0 ? servers : fallbackServers;
+  const currentSelectedId = selectedServerId || activeServers[0]?.id || "srv-prod-01";
 
   const counts: Record<EnvironmentFilter, number> = {
-    all: servers.length,
-    production: servers.filter((s) => s.environment === "production").length,
-    staging: servers.filter((s) => s.environment === "staging").length,
-    development: servers.filter((s) => s.environment === "development").length,
+    all: activeServers.length,
+    production: activeServers.filter((s) => s.environment === "production").length,
+    staging: activeServers.filter((s) => s.environment === "staging").length,
+    development: activeServers.filter((s) => s.environment === "development").length,
   };
 
-  const filteredServers = servers.filter((s) => {
+  const filteredServers = activeServers.filter((s) => {
     const matchesEnv = filterEnv === "all" || s.environment === filterEnv;
     const matchesSearch =
       s.hostname.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -199,8 +132,8 @@ export function Pm2FleetView({
     return matchesEnv && matchesSearch;
   });
 
-  const selectedServer = servers.find((s) => s.id === selectedServerId) || servers[0];
-  const activeProcesses = currentProcessesMap[selectedServer?.id] || [];
+  const selectedServer = activeServers.find((s) => s.id === currentSelectedId) || activeServers[0];
+  const activeProcesses = processesMap[selectedServer?.id] || [];
 
   return (
     <div className="space-y-6">
@@ -226,18 +159,21 @@ export function Pm2FleetView({
 
       {/* Server Node Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {filteredServers.map((server) => (
-          <ServerNodeCard
-            key={server.id}
-            server={server}
-            isSelected={server.id === selectedServerId}
-            onSelect={(id) => {
-              setSelectedServerId(id);
-              setSelectedLogProcess(null);
-            }}
-            processCount={currentProcessesMap[server.id]?.length || 0}
-          />
-        ))}
+        {filteredServers.map((server) => {
+          const count = processesMap[server.id]?.length || 0;
+          return (
+            <ServerNodeCard
+              key={server.id}
+              server={server}
+              isSelected={server.id === currentSelectedId}
+              onSelect={(id) => {
+                setSelectedServerId(id);
+                setSelectedLogProcess(null);
+              }}
+              processCount={count}
+            />
+          );
+        })}
       </div>
 
       {/* Selected Server PM2 Process Fleet */}
@@ -248,6 +184,9 @@ export function Pm2FleetView({
               <h2 className="text-base font-bold text-white flex items-center gap-2">
                 <span>PM2 Applications on</span>
                 <span className="text-sky-400 font-mono">{selectedServer.hostname}</span>
+                <span className="text-xs bg-slate-800 text-slate-400 border border-slate-700 font-mono px-2 py-0.5 rounded-full">
+                  {activeProcesses.length} Apps Active
+                </span>
               </h2>
               <p className="text-xs text-slate-400">
                 Live process status, CPU/memory telemetry, git commits and remote actions
@@ -272,6 +211,7 @@ export function Pm2FleetView({
           )}
 
           <ProcessTable
+            serverId={selectedServer.id}
             serverHostname={selectedServer.hostname}
             processes={activeProcesses}
             onSelectLogs={(name) => setSelectedLogProcess(name)}
@@ -281,4 +221,3 @@ export function Pm2FleetView({
     </div>
   );
 }
-

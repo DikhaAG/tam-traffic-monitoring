@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { GitBranch, GitCommit, RefreshCw, RotateCcw, Square, Terminal, Cpu, HardDrive } from "lucide-react";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { ProcessActionModal } from "./process-action-modal";
+import { getApiBaseUrl } from "@/lib/api-config";
 
 export interface Pm2Process {
   process_id: number;
@@ -15,16 +16,19 @@ export interface Pm2Process {
   restart_count: number;
   git_branch?: string;
   git_commit?: string;
+  git_commit_msg?: string;
   node_version?: string;
 }
 
 interface ProcessTableProps {
+  serverId: string;
   serverHostname: string;
   processes: Pm2Process[];
   onSelectLogs: (processName: string) => void;
 }
 
 export function ProcessTable({
+  serverId,
   serverHostname,
   processes,
   onSelectLogs,
@@ -60,11 +64,11 @@ export function ProcessTable({
 
   const executeAction = async () => {
     // Send action payload to backend
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-    await fetch(`${apiUrl}/api/v1/servers/${serverHostname}/pm2/${modalState.processName}/action`, {
+    const apiUrl = getApiBaseUrl();
+    await fetch(`${apiUrl}/api/v1/servers/${serverId}/pm2/${modalState.processName}/action`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: modalState.action }),
+      body: JSON.stringify({ action: modalState.action, issued_by: "web-dashboard" }),
     });
   };
 

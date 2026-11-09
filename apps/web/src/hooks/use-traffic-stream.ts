@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { getWsBaseUrl } from "@/lib/api-config";
 
 export interface MetricsSnapshot {
   bandwidth_in_bps: number;
@@ -29,7 +30,7 @@ export function useTrafficStream() {
   const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-    const wsUrl = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:4000/ws/live";
+    const wsUrl = getWsBaseUrl();
 
     function connect() {
       try {
