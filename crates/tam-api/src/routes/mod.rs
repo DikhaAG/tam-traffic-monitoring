@@ -11,8 +11,25 @@ use tower_http::cors::CorsLayer;
 use crate::app_state::AppState;
 use crate::ws::{agent_ws_handler, dashboard_ws_handler};
 
+async fn root_handler() -> axum::Json<serde_json::Value> {
+    axum::Json(serde_json::json!({
+        "service": "TAM Telemetry & PM2 Monitoring API",
+        "version": env!("CARGO_PKG_VERSION"),
+        "status": "online",
+        "endpoints": {
+            "health": "/health",
+            "servers": "/api/v1/servers",
+            "metrics": "/api/v1/metrics/overview",
+            "alerts": "/api/v1/alerts",
+            "ws_agent": "/ws/agent",
+            "ws_dashboard": "/ws/live"
+        }
+    }))
+}
+
 pub fn create_router(state: Arc<AppState>) -> Router {
     Router::new()
+        .route("/", get(root_handler))
         .route("/health", get(|| async { "OK" }))
         // WebSocket hubs
         .route("/ws/agent", get(agent_ws_handler))
