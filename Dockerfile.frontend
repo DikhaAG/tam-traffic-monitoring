@@ -3,6 +3,7 @@ WORKDIR /app
 RUN npm install -g pnpm
 
 COPY apps/web/package.json apps/web/pnpm-lock.yaml ./
+RUN pnpm config set onlyBuiltDependencies '["sharp"]' 2>/dev/null || true
 RUN pnpm install --frozen-lockfile
 
 COPY apps/web/ ./
