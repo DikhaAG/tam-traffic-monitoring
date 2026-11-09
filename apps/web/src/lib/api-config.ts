@@ -16,3 +16,4 @@ export function getWsBaseUrl(): string {
   }
   return process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:4000/ws/live";
 }
+
