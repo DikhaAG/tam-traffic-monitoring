@@ -25,15 +25,17 @@ pub struct AgentWebSocketClient {
     agent_token: String,
     node: ServerNode,
     executor: Pm2Executor,
+    is_simulated: bool,
 }
 
 impl AgentWebSocketClient {
-    pub fn new(server_ws_url: String, agent_token: String, node: ServerNode, is_dry_run: bool) -> Self {
+    pub fn new(server_ws_url: String, agent_token: String, node: ServerNode, is_simulated: bool) -> Self {
         Self {
             server_ws_url,
             agent_token,
             node,
-            executor: if is_dry_run { Pm2Executor::new_dry_run() } else { Pm2Executor::new_live() },
+            executor: if is_simulated { Pm2Executor::new_dry_run() } else { Pm2Executor::new_live() },
+            is_simulated,
         }
     }
 
@@ -59,7 +61,14 @@ impl AgentWebSocketClient {
                     loop {
                         tokio::select! {
                             _ = interval.tick() => {
-                                let metrics = crate::pm2::reader::Pm2Reader::generate_simulated_processes();
+                                let metrics = if self.is_simulated {
+                                    crate::pm2::reader::Pm2Reader::generate_simulated_processes()
+                                } else {
+                                    crate::pm2::reader::Pm2Reader::read_live().await.unwrap_or_else(|e| {
+                                        tracing::warn!("Failed to read live PM2 processes: {}", e);
+                                        vec![]
+                                    })
+                                };
                                 let msg = AgentMessage::Pm2Metrics(metrics);
                                 if let Ok(json) = serde_json::to_string(&msg) {
                                     if write.send(Message::Text(json.into())).await.is_err() {
